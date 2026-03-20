@@ -33,6 +33,22 @@ window.addEventListener('click', (e) => {
     }
 });
 
+// Auto load on start
+window.addEventListener('DOMContentLoaded', loadDefaultExcel);
+
+async function loadDefaultExcel() {
+    uploadStatus.innerHTML = `<span style="color: var(--primary)"><i class="fa-solid fa-spinner fa-spin"></i> Đang tự động tải dữ liệu...</span>`;
+    try {
+        const response = await fetch('ho_so_nhan_su.xlsx');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const buffer = await response.arrayBuffer();
+        processExcelData(new Uint8Array(buffer));
+    } catch (error) {
+        console.warn("Không thể tải file tự động:", error);
+        uploadStatus.innerHTML = `<span style="color: var(--primary)">Vui lòng chạy qua Local Server để tự động tải, hoặc chọn file thủ công.</span>`;
+    }
+}
+
 // File Upload Handler
 function handleFileUpload(e) {
     const file = e.target.files[0];
@@ -43,43 +59,46 @@ function handleFileUpload(e) {
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
-            
-            // Get first worksheet
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            
-            // Convert to JSON
-            allData = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: "" });
-            
-            if (allData.length > 0) {
-                // Initialize State
-                filteredData = [...allData];
-                currentPage = 1;
-                
-                // Determine Columns
-                keys = Object.keys(allData[0]);
-                
-                // Setup UI
-                uploadSection.style.display = 'none';
-                dashboard.style.display = 'block';
-                totalCountEl.textContent = allData.length;
-                
-                // Render Table
-                renderTableHeaders();
-                renderTableBody();
-                renderPagination();
-                
-            } else {
-                throw new Error("File Excel không có dữ liệu.");
-            }
+            processExcelData(new Uint8Array(e.target.result));
         } catch (error) {
             console.error(error);
             uploadStatus.innerHTML = `<span style="color: red"><i class="fa-solid fa-circle-exclamation"></i> Lỗi khi đọc file: ${error.message}</span>`;
         }
     };
     reader.readAsArrayBuffer(file);
+}
+
+function processExcelData(data) {
+    const workbook = XLSX.read(data, {type: 'array'});
+    
+    // Get first worksheet
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    
+    // Convert to JSON
+    allData = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: "" });
+    
+    if (allData.length > 0) {
+        // Initialize State
+        filteredData = [...allData];
+        currentPage = 1;
+        
+        // Determine Columns
+        keys = Object.keys(allData[0]);
+        
+        // Setup UI
+        uploadSection.style.display = 'none';
+        dashboard.style.display = 'block';
+        totalCountEl.textContent = allData.length;
+        
+        // Render Table
+        renderTableHeaders();
+        renderTableBody();
+        renderPagination();
+        
+    } else {
+        throw new Error("File Excel không có dữ liệu.");
+    }
 }
 
 // Render Table Headers
