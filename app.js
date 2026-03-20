@@ -1,6 +1,20 @@
 // Constants
 const ROWS_PER_PAGE = 20;
 
+const COLUMN_MAPPING = {
+    'FULLNAME': 'Họ và tên',
+    'DATEOFBIRTH': 'Ngày sinh',
+    'GENDER': 'Giới tính',
+    'NATIONALITY': 'Quốc tịch',
+    'ETHNICITY': 'Dân tộc',
+    'RELIGION': 'Tôn giáo',
+    'WORKPLACE': 'Nơi làm việc',
+    'PROFESSION': 'Nghề nghiệp',
+    'DEGREE': 'Trình độ',
+    'PROVINCE': 'Tỉnh/Thành phố',
+    'ELECTORAL_DISTRICT': 'Đơn vị bầu cử'
+};
+
 // State Variables
 let allData = [];
 let filteredData = [];
@@ -110,7 +124,8 @@ function renderTableHeaders() {
     
     displayKeys.forEach(key => {
         const th = document.createElement('th');
-        th.textContent = key;
+        const lookupKey = typeof key === 'string' ? key.trim().toUpperCase() : key;
+        th.textContent = COLUMN_MAPPING[lookupKey] || key;
         tableHead.appendChild(th);
     });
 }
@@ -225,7 +240,8 @@ function showModal(data) {
             
             const label = document.createElement('div');
             label.className = 'detail-label';
-            label.textContent = key;
+            const lookupKey = typeof key === 'string' ? key.trim().toUpperCase() : key;
+            label.textContent = COLUMN_MAPPING[lookupKey] || key;
             
             const val = document.createElement('div');
             val.className = 'detail-value';
