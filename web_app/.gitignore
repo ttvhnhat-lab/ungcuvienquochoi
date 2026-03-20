@@ -1,0 +1,24 @@
+# Dữ liệu nhạy cảm (Không bao giờ đẩy file dữ liệu lên public repo)
+*.xlsx
+*.xls
+*.csv
+ho_so_nhan_su.xlsx
+
+# Node modules & Environment variables (Phòng trường hợp sau này upgrade lên React/Vue/Node)
+node_modules/
+.env
+.env.local
+.env.development
+.env.production
+
+# Thư mục build
+dist/
+build/
+
+# IDE & Editor
+.vscode/
+.idea/
+
+# Hệ điều hành
+.DS_Store
+Thumbs.db
