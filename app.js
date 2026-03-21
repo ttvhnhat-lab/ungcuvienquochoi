@@ -64,10 +64,10 @@ window.addEventListener('DOMContentLoaded', loadDefaultExcel);
 async function loadDefaultExcel() {
     uploadStatus.innerHTML = `<span style="color: var(--primary)"><i class="fa-solid fa-spinner fa-spin"></i> Đang tự động tải dữ liệu...</span>`;
     try {
-        const response = await fetch('Cong bo Danh sach chinh thuc.docx');
+        const response = await fetch('Danh sach chinh thuc.pdf');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const buffer = await response.arrayBuffer();
-        await processDocxData(buffer);
+        await processPdfData(buffer);
     } catch (error) {
         console.warn("Không thể tải file tự động:", error);
         uploadStatus.innerHTML = `<span style="color: var(--primary)">Vui lòng chạy qua Local Server để tự động tải, hoặc chọn file thủ công.</span>`;
@@ -84,7 +84,7 @@ function handleFileUpload(e) {
     const reader = new FileReader();
     reader.onload = async function(e) {
         try {
-            await processDocxData(e.target.result);
+            await processPdfData(e.target.result);
         } catch (error) {
             console.error(error);
             uploadStatus.innerHTML = `<span style="color: red"><i class="fa-solid fa-circle-exclamation"></i> Lỗi khi đọc file: ${error.message}</span>`;
@@ -93,41 +93,86 @@ function handleFileUpload(e) {
     reader.readAsArrayBuffer(file);
 }
 
-async function processDocxData(arrayBuffer) {
+async function processPdfData(arrayBuffer) {
+    // Setup PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    
     try {
-        const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
-        const html = result.value;
+        const loadingTask = pdfjsLib.getDocument({data: arrayBuffer});
+        const pdf = await loadingTask.promise;
+        const totalPages = pdf.numPages;
         
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
+        let allRows = [];
         
-        const tables = doc.querySelectorAll('table');
-        if (tables.length === 0) {
-            throw new Error("Không tìm thấy bảng dữ liệu nào trong file Word.");
+        for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            
+            const items = textContent.items;
+            
+            // Group text items by Y coordinate (tolerance parameter for different line heights)
+            const rowsObj = {};
+            const Y_TOLERANCE = 5; 
+            
+            items.forEach(item => {
+                const x = item.transform[4];
+                const y = item.transform[5];
+                
+                let foundY = null;
+                for (let keyY of Object.keys(rowsObj)) {
+                    if (Math.abs(parseFloat(keyY) - y) < Y_TOLERANCE) {
+                        foundY = keyY;
+                        break;
+                    }
+                }
+                
+                if (foundY === null) {
+                    foundY = y.toString();
+                    rowsObj[foundY] = [];
+                }
+                
+                rowsObj[foundY].push({
+                    x: x,
+                    text: item.str,
+                    width: item.width
+                });
+            });
+            
+            // Sort rows descending by Y (PDF origin is bottom-left)
+            const sortedYKeys = Object.keys(rowsObj).sort((a, b) => parseFloat(b) - parseFloat(a));
+            
+            for (let yKey of sortedYKeys) {
+                // Sort items in row ascending by X
+                const rowItems = rowsObj[yKey].sort((a, b) => a.x - b.x);
+                let rowTexts = [];
+                rowItems.forEach(item => {
+                    const text = item.text.trim();
+                    if (text) rowTexts.push(text);
+                });
+                if (rowTexts.length > 0) {
+                    allRows.push(rowTexts);
+                }
+            }
         }
         
-        // Use the first table found
-        const table = tables[0];
-        const rows = Array.from(table.querySelectorAll('tr'));
-        
-        if (rows.length < 2) {
-            throw new Error("Bảng dữ liệu không đủ nội dung (cần ít nhất dòng tiêu đề và dòng dữ liệu).");
+        if (allRows.length < 2) {
+            throw new Error("Không tìm thấy đủ dữ liệu cấu trúc bảng từ văn bản PDF.");
         }
         
-        const headerRow = rows[0];
-        const rawHeaders = Array.from(headerRow.querySelectorAll('th, td')).map(cell => cell.textContent.trim());
-        const headers = rawHeaders.map((h, i) => h || `Cột ${i + 1}`);
+        // Assume first row is headers
+        let headerRow = allRows[0];
+        const headers = headerRow.map((h, i) => h || `Cột ${i + 1}`);
         
         const data = [];
-        for (let i = 1; i < rows.length; i++) {
-            const cells = Array.from(rows[i].querySelectorAll('td, th'));
+        for (let i = 1; i < allRows.length; i++) {
+            const rowArr = allRows[i];
             const rowData = {};
             let isEmptyRow = true;
             
             headers.forEach((header, index) => {
-                const cellText = cells[index] ? cells[index].textContent.trim() : "";
-                rowData[header] = cellText;
-                if (cellText) isEmptyRow = false;
+                const val = rowArr[index] || "";
+                rowData[header] = val;
+                if (val) isEmptyRow = false;
             });
             
             if (!isEmptyRow) {
@@ -138,25 +183,21 @@ async function processDocxData(arrayBuffer) {
         allData = data;
         
         if (allData.length > 0) {
-            // Initialize State
             filteredData = [...allData];
             currentPage = 1;
             
-            // Determine Columns
             keys = Object.keys(allData[0]);
             
-            // Setup UI
             uploadSection.style.display = 'none';
             dashboard.style.display = 'block';
             totalCountEl.textContent = allData.length;
             
-            // Render Table
             renderTableHeaders();
             renderTableBody();
             renderPagination();
             
         } else {
-            throw new Error("Bảng không chứa dữ liệu hợp lệ.");
+            throw new Error("Tệp PDF này không chứa nội dung phân tích (có thể là ảnh scan).");
         }
     } catch (error) {
         throw error;
