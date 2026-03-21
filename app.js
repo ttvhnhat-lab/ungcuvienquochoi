@@ -88,7 +88,7 @@ async function loadDefaultExcel() {
 
     // Load qua http nếu có server
     try {
-        const urlFile = encodeURI('ho_so_nhan_su (2).xlsx');
+        const urlFile = encodeURI('ho_so_nhan_su _chuan.xlsx');
         const response = await fetch(urlFile);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const buffer = await response.arrayBuffer();
