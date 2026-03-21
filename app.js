@@ -70,7 +70,8 @@ window.addEventListener('DOMContentLoaded', loadDefaultExcel);
 async function loadDefaultExcel() {
     uploadStatus.innerHTML = `<span style="color: var(--primary)"><i class="fa-solid fa-spinner fa-spin"></i> Đang tự động tải dữ liệu...</span>`;
     try {
-        const response = await fetch('ho_so_nhan_su (2).xlsx');
+        const urlFile = encodeURI('ho_so_nhan_su (2).xlsx');
+        const response = await fetch(urlFile);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const buffer = await response.arrayBuffer();
         processExcelData(new Uint8Array(buffer));
