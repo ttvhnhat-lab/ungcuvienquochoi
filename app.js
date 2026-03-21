@@ -12,7 +12,18 @@ const COLUMN_MAPPING = {
     'PROFESSION': 'Nghề nghiệp',
     'DEGREE': 'Trình độ',
     'PROVINCE': 'Tỉnh/Thành phố',
-    'ELECTORAL_DISTRICT': 'Đơn vị bầu cử'
+    'ELECTORAL_DISTRICT': 'Đơn vị bầu cử',
+    'GENERALEDUCATION': 'Giáo dục phổ thông',
+    'FOREIGNLANGUAGE': 'Ngoại ngữ',
+    'ACADEMICTITLE': 'Học hàm, Học vị',
+    'POLITICALTHEORYLEVEL': 'Lý luận chính trị',
+    'PROFESSIONALEXPERTISE': 'Trình độ chuyên môn',
+    'CURRENTPOSITION': 'Chức vụ hiện nay',
+    'PARTYJOININGDATE': 'Ngày vào Đảng',
+    'NATIONALASSEMBLYDEPUTY': 'Đại biểu Quốc hội',
+    'SOURCEURL': 'Nguồn tham khảo',
+    'HOMETOWN': 'Quê quán',
+    'CURRENTRESIDENCE': 'Nơi ở hiện nay'
 };
 
 // State Variables
