@@ -15,7 +15,7 @@ const COLUMN_MAPPING = {
     'ELECTORAL_DISTRICT': 'Đơn vị bầu cử',
     'GENERALEDUCATION': 'Giáo dục phổ thông',
     'FOREIGNLANGUAGE': 'Ngoại ngữ',
-    'ACADEMICTITLE': 'Học hàm, Học vị',
+    'ACADEMICTITLE': 'Học hàm',
     'POLITICALTHEORYLEVEL': 'Lý luận chính trị',
     'PROFESSIONALEXPERTISE': 'Trình độ chuyên môn',
     'CURRENTPOSITION': 'Chức vụ hiện nay',
@@ -23,7 +23,13 @@ const COLUMN_MAPPING = {
     'NATIONALASSEMBLYDEPUTY': 'Đại biểu Quốc hội',
     'SOURCEURL': 'Nguồn tham khảo',
     'HOMETOWN': 'Quê quán',
-    'CURRENTRESIDENCE': 'Nơi ở hiện nay'
+    'CURRENTRESIDENCE': 'Nơi ở hiện nay',
+    'BALLOTNUMBER': 'Tỷ lệ phiếu bầu',
+    'ACADEMICDEGREE': 'Học vị',
+    'POLITICALTHEORY': 'Lý luận chính trị',
+    'OCCUPATIONPOSITION': 'Nghề nghiệp, chức vụ',
+    'NATIONALASSEMBLYDELEGATE': 'Đại biểu Quốc hội khóa',
+    'PEOPLESCOUNCILDELEGATE': 'Đại biểu HĐND'
 };
 
 // State Variables
@@ -64,10 +70,10 @@ window.addEventListener('DOMContentLoaded', loadDefaultExcel);
 async function loadDefaultExcel() {
     uploadStatus.innerHTML = `<span style="color: var(--primary)"><i class="fa-solid fa-spinner fa-spin"></i> Đang tự động tải dữ liệu...</span>`;
     try {
-        const response = await fetch('Danh sach chinh thuc.pdf');
+        const response = await fetch('ho_so_nhan_su (2).xlsx');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const buffer = await response.arrayBuffer();
-        await processPdfData(buffer);
+        processExcelData(new Uint8Array(buffer));
     } catch (error) {
         console.warn("Không thể tải file tự động:", error);
         uploadStatus.innerHTML = `<span style="color: var(--primary)">Vui lòng chạy qua Local Server để tự động tải, hoặc chọn file thủ công.</span>`;
@@ -82,9 +88,9 @@ function handleFileUpload(e) {
     uploadStatus.innerHTML = `<span style="color: var(--primary)"><i class="fa-solid fa-spinner fa-spin"></i> Đang đọc file...</span>`;
 
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = function(e) {
         try {
-            await processPdfData(e.target.result);
+            processExcelData(new Uint8Array(e.target.result));
         } catch (error) {
             console.error(error);
             uploadStatus.innerHTML = `<span style="color: red"><i class="fa-solid fa-circle-exclamation"></i> Lỗi khi đọc file: ${error.message}</span>`;
@@ -93,114 +99,47 @@ function handleFileUpload(e) {
     reader.readAsArrayBuffer(file);
 }
 
-async function processPdfData(arrayBuffer) {
-    // Setup PDF.js worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+function processExcelData(data) {
+    const workbook = XLSX.read(data, {type: 'array'});
     
-    try {
-        const loadingTask = pdfjsLib.getDocument({data: arrayBuffer});
-        const pdf = await loadingTask.promise;
-        const totalPages = pdf.numPages;
+    // Get first worksheet
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    
+    // Convert to JSON
+    allData = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: "" });
+    
+    if (allData.length > 0) {
+        // Đưa đại biểu Tô Lâm lên vị trí đầu tiên
+        const targetName = "Tô Lâm";
+        const exactIndex = allData.findIndex(item => 
+            Object.values(item).some(val => typeof val === 'string' && val.toLowerCase().includes(targetName.toLowerCase()))
+        );
         
-        let allRows = [];
-        
-        for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-            const page = await pdf.getPage(pageNum);
-            const textContent = await page.getTextContent();
-            
-            const items = textContent.items;
-            
-            // Group text items by Y coordinate (tolerance parameter for different line heights)
-            const rowsObj = {};
-            const Y_TOLERANCE = 5; 
-            
-            items.forEach(item => {
-                const x = item.transform[4];
-                const y = item.transform[5];
-                
-                let foundY = null;
-                for (let keyY of Object.keys(rowsObj)) {
-                    if (Math.abs(parseFloat(keyY) - y) < Y_TOLERANCE) {
-                        foundY = keyY;
-                        break;
-                    }
-                }
-                
-                if (foundY === null) {
-                    foundY = y.toString();
-                    rowsObj[foundY] = [];
-                }
-                
-                rowsObj[foundY].push({
-                    x: x,
-                    text: item.str,
-                    width: item.width
-                });
-            });
-            
-            // Sort rows descending by Y (PDF origin is bottom-left)
-            const sortedYKeys = Object.keys(rowsObj).sort((a, b) => parseFloat(b) - parseFloat(a));
-            
-            for (let yKey of sortedYKeys) {
-                // Sort items in row ascending by X
-                const rowItems = rowsObj[yKey].sort((a, b) => a.x - b.x);
-                let rowTexts = [];
-                rowItems.forEach(item => {
-                    const text = item.text.trim();
-                    if (text) rowTexts.push(text);
-                });
-                if (rowTexts.length > 0) {
-                    allRows.push(rowTexts);
-                }
-            }
+        if (exactIndex !== -1) {
+            const toLamData = allData.splice(exactIndex, 1)[0];
+            allData.unshift(toLamData);
         }
+
+        // Initialize State
+        filteredData = [...allData];
+        currentPage = 1;
         
-        if (allRows.length < 2) {
-            throw new Error("Không tìm thấy đủ dữ liệu cấu trúc bảng từ văn bản PDF.");
-        }
+        // Determine Columns
+        keys = Object.keys(allData[0]);
         
-        // Assume first row is headers
-        let headerRow = allRows[0];
-        const headers = headerRow.map((h, i) => h || `Cột ${i + 1}`);
+        // Setup UI
+        uploadSection.style.display = 'none';
+        dashboard.style.display = 'block';
+        totalCountEl.textContent = allData.length;
         
-        const data = [];
-        for (let i = 1; i < allRows.length; i++) {
-            const rowArr = allRows[i];
-            const rowData = {};
-            let isEmptyRow = true;
-            
-            headers.forEach((header, index) => {
-                const val = rowArr[index] || "";
-                rowData[header] = val;
-                if (val) isEmptyRow = false;
-            });
-            
-            if (!isEmptyRow) {
-                data.push(rowData);
-            }
-        }
+        // Render Table
+        renderTableHeaders();
+        renderTableBody();
+        renderPagination();
         
-        allData = data;
-        
-        if (allData.length > 0) {
-            filteredData = [...allData];
-            currentPage = 1;
-            
-            keys = Object.keys(allData[0]);
-            
-            uploadSection.style.display = 'none';
-            dashboard.style.display = 'block';
-            totalCountEl.textContent = allData.length;
-            
-            renderTableHeaders();
-            renderTableBody();
-            renderPagination();
-            
-        } else {
-            throw new Error("Tệp PDF này không chứa nội dung phân tích (có thể là ảnh scan).");
-        }
-    } catch (error) {
-        throw error;
+    } else {
+        throw new Error("File Excel không có dữ liệu.");
     }
 }
 

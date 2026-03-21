@@ -8,8 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- PDF.js for PDF parsing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- SheetJS CDN -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -27,13 +27,13 @@
         <!-- Upload Section -->
         <section id="upload-section" class="card upload-card animate-fade-in">
             <div class="upload-icon">
-                <i class="fa-solid fa-file-pdf"></i>
+                <i class="fa-solid fa-file-excel"></i>
             </div>
             <h3>Khởi Tạo Dữ Liệu Hồ Sơ</h3>
-            <p>Vui lòng chọn file <code>Danh sach chinh thuc.pdf</code> để bắt đầu tra cứu thông tin.</p>
+            <p>Vui lòng chọn file <code>ho_so_nhan_su (2).xlsx</code> để bắt đầu tra cứu thông tin.</p>
             <div class="upload-btn-wrapper">
-                <button class="btn btn-primary"><i class="fa-solid fa-upload"></i> Chọn File Tải Lên</button>
-                <input type="file" id="excel-file" accept=".pdf" />
+                <button class="btn btn-primary"><i class="fa-solid fa-upload"></i> Chọn File Upload</button>
+                <input type="file" id="excel-file" accept=".xlsx, .xls" />
             </div>
             <div id="upload-status" class="status-message"></div>
         </section>
