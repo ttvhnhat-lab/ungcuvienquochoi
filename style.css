@@ -13,11 +13,33 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+html {
+    background-color: var(--bg-main);
+}
+
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: var(--bg-main);
     color: var(--text-main);
     line-height: 1.6;
+    position: relative;
+    min-height: 100vh;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Tên file hình ảnh nền bạn lưu vào thư mục này */
+    background-image: url('bg-trong-dong.jpg'); 
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    opacity: 0.15;
+    z-index: -1;
+    pointer-events: none; /* Không cho phép click chặn chuột */
 }
 
 /* Header */
