@@ -8,14 +8,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS CDN -->
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- Mammoth JS for Docx parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="app-header">
         <div class="header-content">
-            <div class="header-logo"><i class="fa-solid fa-building-columns"></i></div>
+            <div class="header-logo"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Emblem_of_Vietnam.svg" alt="Quốc huy Việt Nam" class="national-emblem"></div>
             <div class="header-titles">
                 <h1>HỆ THỐNG TRA CỨU HỒ SƠ NHÂN SỰ</h1>
                 <h2>Đại Biểu Quốc Hội</h2>
@@ -27,13 +27,13 @@
         <!-- Upload Section -->
         <section id="upload-section" class="card upload-card animate-fade-in">
             <div class="upload-icon">
-                <i class="fa-solid fa-file-excel"></i>
+                <i class="fa-solid fa-file-word"></i>
             </div>
             <h3>Khởi Tạo Dữ Liệu Hồ Sơ</h3>
-            <p>Vui lòng chọn file <code>ho_so_nhan_su.xlsx</code> để bắt đầu tra cứu thông tin.</p>
+            <p>Vui lòng chọn file <code>Cong bo Danh sach chinh thuc.docx</code> để bắt đầu tra cứu thông tin.</p>
             <div class="upload-btn-wrapper">
-                <button class="btn btn-primary"><i class="fa-solid fa-upload"></i> Chọn File Upload</button>
-                <input type="file" id="excel-file" accept=".xlsx, .xls" />
+                <button class="btn btn-primary"><i class="fa-solid fa-upload"></i> Chọn File Tải Lên</button>
+                <input type="file" id="excel-file" accept=".docx" />
             </div>
             <div id="upload-status" class="status-message"></div>
         </section>

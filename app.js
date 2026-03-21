@@ -64,10 +64,10 @@ window.addEventListener('DOMContentLoaded', loadDefaultExcel);
 async function loadDefaultExcel() {
     uploadStatus.innerHTML = `<span style="color: var(--primary)"><i class="fa-solid fa-spinner fa-spin"></i> Đang tự động tải dữ liệu...</span>`;
     try {
-        const response = await fetch('ho_so_nhan_su.xlsx');
+        const response = await fetch('Cong bo Danh sach chinh thuc.docx');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const buffer = await response.arrayBuffer();
-        processExcelData(new Uint8Array(buffer));
+        await processDocxData(buffer);
     } catch (error) {
         console.warn("Không thể tải file tự động:", error);
         uploadStatus.innerHTML = `<span style="color: var(--primary)">Vui lòng chạy qua Local Server để tự động tải, hoặc chọn file thủ công.</span>`;
@@ -82,9 +82,9 @@ function handleFileUpload(e) {
     uploadStatus.innerHTML = `<span style="color: var(--primary)"><i class="fa-solid fa-spinner fa-spin"></i> Đang đọc file...</span>`;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         try {
-            processExcelData(new Uint8Array(e.target.result));
+            await processDocxData(e.target.result);
         } catch (error) {
             console.error(error);
             uploadStatus.innerHTML = `<span style="color: red"><i class="fa-solid fa-circle-exclamation"></i> Lỗi khi đọc file: ${error.message}</span>`;
@@ -93,36 +93,73 @@ function handleFileUpload(e) {
     reader.readAsArrayBuffer(file);
 }
 
-function processExcelData(data) {
-    const workbook = XLSX.read(data, {type: 'array'});
-    
-    // Get first worksheet
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
-    
-    // Convert to JSON
-    allData = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: "" });
-    
-    if (allData.length > 0) {
-        // Initialize State
-        filteredData = [...allData];
-        currentPage = 1;
+async function processDocxData(arrayBuffer) {
+    try {
+        const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
+        const html = result.value;
         
-        // Determine Columns
-        keys = Object.keys(allData[0]);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
         
-        // Setup UI
-        uploadSection.style.display = 'none';
-        dashboard.style.display = 'block';
-        totalCountEl.textContent = allData.length;
+        const tables = doc.querySelectorAll('table');
+        if (tables.length === 0) {
+            throw new Error("Không tìm thấy bảng dữ liệu nào trong file Word.");
+        }
         
-        // Render Table
-        renderTableHeaders();
-        renderTableBody();
-        renderPagination();
+        // Use the first table found
+        const table = tables[0];
+        const rows = Array.from(table.querySelectorAll('tr'));
         
-    } else {
-        throw new Error("File Excel không có dữ liệu.");
+        if (rows.length < 2) {
+            throw new Error("Bảng dữ liệu không đủ nội dung (cần ít nhất dòng tiêu đề và dòng dữ liệu).");
+        }
+        
+        const headerRow = rows[0];
+        const rawHeaders = Array.from(headerRow.querySelectorAll('th, td')).map(cell => cell.textContent.trim());
+        const headers = rawHeaders.map((h, i) => h || `Cột ${i + 1}`);
+        
+        const data = [];
+        for (let i = 1; i < rows.length; i++) {
+            const cells = Array.from(rows[i].querySelectorAll('td, th'));
+            const rowData = {};
+            let isEmptyRow = true;
+            
+            headers.forEach((header, index) => {
+                const cellText = cells[index] ? cells[index].textContent.trim() : "";
+                rowData[header] = cellText;
+                if (cellText) isEmptyRow = false;
+            });
+            
+            if (!isEmptyRow) {
+                data.push(rowData);
+            }
+        }
+        
+        allData = data;
+        
+        if (allData.length > 0) {
+            // Initialize State
+            filteredData = [...allData];
+            currentPage = 1;
+            
+            // Determine Columns
+            keys = Object.keys(allData[0]);
+            
+            // Setup UI
+            uploadSection.style.display = 'none';
+            dashboard.style.display = 'block';
+            totalCountEl.textContent = allData.length;
+            
+            // Render Table
+            renderTableHeaders();
+            renderTableBody();
+            renderPagination();
+            
+        } else {
+            throw new Error("Bảng không chứa dữ liệu hợp lệ.");
+        }
+    } catch (error) {
+        throw error;
     }
 }
 
