@@ -69,6 +69,24 @@ window.addEventListener('DOMContentLoaded', loadDefaultExcel);
 
 async function loadDefaultExcel() {
     uploadStatus.innerHTML = `<span style="color: var(--primary)"><i class="fa-solid fa-spinner fa-spin"></i> Đang tự động tải dữ liệu...</span>`;
+    
+    // Nếu có dữ liệu mã hoá sẵn trong data.js thì dùng luôn (vượt tường lửa CORS file://)
+    if (typeof excelDataB64 !== 'undefined' && excelDataB64) {
+        try {
+            const binaryString = window.atob(excelDataB64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            processExcelData(bytes);
+            return;
+        } catch (error) {
+            console.warn("Không thể giải mã dữ liệu offline:", error);
+        }
+    }
+
+    // Load qua http nếu có server
     try {
         const urlFile = encodeURI('ho_so_nhan_su (2).xlsx');
         const response = await fetch(urlFile);
