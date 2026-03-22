@@ -24,7 +24,7 @@ const COLUMN_MAPPING = {
     'SOURCEURL': 'Nguồn tham khảo',
     'HOMETOWN': 'Quê quán',
     'CURRENTRESIDENCE': 'Nơi ở hiện nay',
-    'BALLOTNUMBER': 'Tỷ lệ phiếu bầu',
+    'BALLOTNUMBER': 'Tỷ lệ',
     'ACADEMICDEGREE': 'Học vị',
     'POLITICALTHEORY': 'Lý luận chính trị',
     'OCCUPATIONPOSITION': 'Nghề nghiệp, chức vụ',
@@ -173,7 +173,7 @@ function renderTableHeaders() {
         th.textContent = displayName;
         
         const dLower = displayName.toLowerCase();
-        const isEssential = dLower.includes('tên') || dLower.includes('phiếu') || dLower.includes('sinh');
+        const isEssential = dLower.includes('tên') || dLower.includes('tỷ lệ') || dLower.includes('phiếu') || dLower.includes('sinh');
         if (!isEssential) {
             th.classList.add('mobile-hide');
         }
@@ -218,7 +218,7 @@ function renderTableBody() {
             const lookupKey = typeof key === 'string' ? key.trim().toUpperCase() : key;
             const displayName = COLUMN_MAPPING[lookupKey] || key;
             const dLower = displayName.toLowerCase();
-            const isEssential = dLower.includes('tên') || dLower.includes('phiếu') || dLower.includes('sinh');
+            const isEssential = dLower.includes('tên') || dLower.includes('tỷ lệ') || dLower.includes('phiếu') || dLower.includes('sinh');
             if (!isEssential) {
                 td.classList.add('mobile-hide');
             }

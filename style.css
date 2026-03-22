@@ -264,7 +264,9 @@ th {
     letter-spacing: 0.5px;
     border-bottom: 2px solid var(--border);
     position: sticky;
-    top: 0;
+    top: 135px; /* Chiều cao xấp xỉ của Header để không bị đè */
+    z-index: 10;
+    background-color: #f1f5f9;
 }
 td {
     padding: 1rem;
