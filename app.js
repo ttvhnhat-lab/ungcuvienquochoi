@@ -43,7 +43,6 @@ const fileInput = document.getElementById('excel-file');
 const uploadStatus = document.getElementById('upload-status');
 const uploadSection = document.getElementById('upload-section');
 const dashboard = document.getElementById('dashboard');
-const totalCountEl = document.getElementById('total-count');
 
 const tableHead = document.getElementById('table-head');
 const tableBody = document.getElementById('table-body');
@@ -150,7 +149,6 @@ function processExcelData(data) {
         // Setup UI
         uploadSection.style.display = 'none';
         dashboard.style.display = 'block';
-        totalCountEl.textContent = allData.length;
         
         // Render Table
         renderTableHeaders();
@@ -162,7 +160,6 @@ function processExcelData(data) {
     }
 }
 
-// Render Table Headers
 function renderTableHeaders() {
     tableHead.innerHTML = '<th class="col-stt">STT</th>';
     
@@ -172,7 +169,15 @@ function renderTableHeaders() {
     displayKeys.forEach(key => {
         const th = document.createElement('th');
         const lookupKey = typeof key === 'string' ? key.trim().toUpperCase() : key;
-        th.textContent = COLUMN_MAPPING[lookupKey] || key;
+        const displayName = COLUMN_MAPPING[lookupKey] || key;
+        th.textContent = displayName;
+        
+        const dLower = displayName.toLowerCase();
+        const isEssential = dLower.includes('tên') || dLower.includes('phiếu') || dLower.includes('sinh');
+        if (!isEssential) {
+            th.classList.add('mobile-hide');
+        }
+        
         tableHead.appendChild(th);
     });
 }
@@ -209,6 +214,15 @@ function renderTableBody() {
             const value = rowData[key] || '';
             // Trim long texts in table view
             td.textContent = value.length > 80 ? value.substring(0, 80) + '...' : value;
+            
+            const lookupKey = typeof key === 'string' ? key.trim().toUpperCase() : key;
+            const displayName = COLUMN_MAPPING[lookupKey] || key;
+            const dLower = displayName.toLowerCase();
+            const isEssential = dLower.includes('tên') || dLower.includes('phiếu') || dLower.includes('sinh');
+            if (!isEssential) {
+                td.classList.add('mobile-hide');
+            }
+            
             tr.appendChild(td);
         });
         
